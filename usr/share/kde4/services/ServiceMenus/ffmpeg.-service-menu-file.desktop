@@ -66,7 +66,7 @@ Name[it]=Versione
 
 [Desktop Entry]
 Actions=append;appendplay;next;playprev;playnext;rotate90;rotate180;rotate270;rotate360;rotate;version
-Icon=vlc
+Icon=dolphin
 ServiceTypes=KonqPopupMenu/Plugin,video/.*,audio/.*
 Type=Service
 X-KDE-Priority=TopLevel
