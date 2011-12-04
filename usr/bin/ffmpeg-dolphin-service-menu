@@ -1,10 +1,25 @@
 #!/bin/bash
 
+
+
+user_data[1]=$1 #vcodec
+user_data[2]=$2 #vbit
+user_data[3]=$3 #acodec
+user_data[4]=$4 #abit
+user_data[5]=$5 #channels
+user_data[6]=$6 #container
+user_data[7]=$7 #samplerate
+user_data[8]=$8 #threads
+user_data[9]=$9 #framerate
+
+
+
+
 threads=`cat /proc/cpuinfo | grep processor | wc -l` 
-listoffile="$HOME/vlcappendconverter.lst"
+listoffile="$HOME/ffmpeg-service-menu.lst"
 numberoffile=$(wc -l <$listoffile)
 
-
+#DONE
 
 function_load_profiles(){
 
@@ -13,10 +28,11 @@ i=1
 nameprofile[$i]=$(awk '{print $1}')
 ffmpegoptionprofile[$i]=$(awk '{print $2}')
 
+  kdialog --menu "choose your profile" $(for ((i = 0; i <=${#a[@]} ; i++ )) ; do printf "%s %s " "${nameprofile[i]}" "${ffmpegoptionprofile[i]}"; done)
 done < "$HOME/.kde/config/FFmpeg_profiles.lst"
 }
 
-
+#DONE
 function_folder_add(){
 
 #shopt -s nullglob 
@@ -27,7 +43,7 @@ for extension in 3g2 3gp 4xm IFF ISS MTV RoQ a64 aac ac3 adts aea aiff alaw alsa
 
 if  [[ "$line" == *.$extension ]] ; then
 
- COMMAND "$line" 0 
+ echo  "$line" >>"$listoffile"
  
 fi 
 done
@@ -37,12 +53,14 @@ done< <(find "$1" -type f)
 
 }
 
+
+#DONE
 function_get_option_audio(){
 
 abitrate=$(kdialog --combobox   $"Audio Bit Rate"32k 64k 128k 256k --default 128k)
 samplerate=$(kdialog --combobox $"Sample Rate Hz" 22050 44100 48000  --default 44100 )
 acodec=$(kdialog --combobox $"Choose Audio Codec"   aac  aac_latm  ac3  ac3_fixed adpcm_4xm  adpcm_adx  adpcm_ct  adpcm_ea  adpcm_ea_maxis_xa  adpcm_ea_r1  adpcm_ea_r2  adpcm_ea_r3  adpcm_ea_xas  adpcm_ima_amv  adpcm_ima_dk3  adpcm_ima_dk4  adpcm_ima_ea_eacs  adpcm_ima_ea_sead  adpcm_ima_iss  adpcm_ima_qt  adpcm_ima_smjpeg  adpcm_ima_wav  adpcm_ima_ws  adpcm_ms  adpcm_sbpro_2  adpcm_sbpro_3  adpcm_sbpro_4  adpcm_swf  adpcm_thp  adpcm_xa  adpcm_yamaha  alac  als  amrnb  amrwb    atrac1  atrac3  binkaudio_dct  binkaudio_rdft  cook  dca  dsicinaudio  eac3  flac  g722  g726  gsm  gsm_ms  imc  interplay_dpcm  libfaac  libgsm  libgsm_ms  libmp3lame  libopencore_amrnb  libopencore_amrwb  libspeex  libvo_aacenc  libvo_amrwbenc  libvorbis  mace3  mace6  mlp  mp1  mp1float  mp2  mp2float  mp3  mp3adu  mp3adufloat  mp3float  mp3on4  mp3on4float  mpc7  mpc8  nellymoser  pcm_alaw  pcm_bluray  pcm_dvd  pcm_f32be  pcm_f32le  pcm_f64be  pcm_f64le  pcm_lxf  pcm_mulaw  pcm_s16be  pcm_s16le  pcm_s16le_ planar  pcm_s24be  pcm_s24daud  pcm_s24le  pcm_s32be  pcm_s32le  pcm_s8  pcm_u16be  pcm_u16le  pcm_u24be  pcm_u24le  pcm_u32be  pcm_u32le  pcm_u8  pcm_zork  pgssub  qcelp  qdm2  real_144  real_288  roq_dpcm  s302m  shorten  sipr  smackaud  sol_dpcm  srt  truehd  truespeech  tta  twinvq  vmdaudio  vorbis  wavpack  wmapro  wmav1  wmav2  wmavoice  ws_sn)
-if [[ "$1" ==  newmedia ]];then 
+if   [[ "$1" ==  newmedia ]];then 
 newmedia=$(kdialog --getopenfilename $HOME  )
 fi
 }
@@ -65,7 +83,10 @@ framerate=$(kdialog --combobox $"Choose Your Prefered Frame for seconds Value fo
 framerate=$()
 }
 
+function_create(){
+echo 
 
+}
  
 
 function_menu_complex(){
@@ -77,7 +98,7 @@ function_get_option_audio
 elif  [[ "$output" == "video" ]] ; then 
 function_get_option_video
 elif  [[ "$output" == "create" ]] ; then
-
+function_create
 elif  [[ "$output" == "decompile" ]] ; then
 function_decompile
 elif  [[ "$output" == "compile" ]] ; then
@@ -109,6 +130,11 @@ ffmpeg -i "$line"  "$outfolder"_decompiled/"$name"%d.$(kdialog --combobox "pictu
 
 done < $listoffile 
 }
+
+
+
+
+
 
 function_compile(){
 while read line ; do 
@@ -143,15 +169,34 @@ done < $listoffile
 
 
 function_ffmpeg_easy (){
-while read line ; do 
+ 
 
 
-ffmpeg -i  "$line"  -sameq "${line%%.*}.$(kdialog --combobox $"Convert to..".mp3 mp2 aac ape mp4 mov avi mpg mpeg webm wmv theora flv asf)"
+a=1
+mystufvariabletouseonmyscript=$(kdialog --progressbar $"Starting Conversion..." 100)
+qdbus $mystufvariabletouseonmyscript  showCancelButton true 
+
+until test "true" = `qdbus  $mystufvariabletouseonmyscript wasCancelled` ; do 
+	while read line ; do
+		qdbus $mystufvariabletouseonmyscript org.kde.kdialog.ProgressDialog.setLabelText $"Starting Conversion...processing file $line" 
+
+		ffmpeg -i  "$line"  -sameq "${line%%.*}.$(kdialog --combobox $"Convert to..".mp3 mp2 aac ape mp4 mov avi mpg mpeg webm wmv theora flv asf)"
 
 
-done < $listoffile
+
+		value=$(( $($a*100))/$numberoffile ))
+		qdbus  $mystufvariabletouseonmyscript Set org.kde.kdialog.ProgressDialog value $value
+		a=$(($a+1))
+		done< "$listoffile"
 
 
+done
+
+
+
+
+
+ 
 
 }
 
@@ -159,81 +204,80 @@ done < $listoffile
 
 
 function_ffmpeg_normal_single(){
-while read line ; do 
 
 
-ffmpeg -i  "$line"  -r ${user_data[9]} -threads  ${user_data[8]}  -vcodec ${user_data[1]}   -b ${user_data[2]} -acodec ${user_data[3]}  -ab ${user_data[4]} -ar ${user_data[7]} "${line%%.*}.${user_data[6]}"
+a=1
+mystufvariabletouseonmyscript=$(kdialog --progressbar $"Starting Conversion..." 100)
+qdbus $mystufvariabletouseonmyscript  showCancelButton true 
+
+until test "true" = `qdbus  $mystufvariabletouseonmyscript wasCancelled` ; do 
+	while read line ; do
+		qdbus $mystufvariabletouseonmyscript org.kde.kdialog.ProgressDialog.setLabelText $"Starting Conversion...processing file $line" 
+
+		ffmpeg -i  "$line"  -r ${user_data[9]} -threads  ${user_data[8]}  -vcodec ${user_data[1]}   -b ${user_data[2]} -acodec ${user_data[3]}  -ab ${user_data[4]} -ar ${user_data[7]} "${line%%.*}.${user_data[6]}"
 
 
-done < $listoffile 
-}
+		value=$(( $($a*100))/$numberoffile ))
+		qdbus  $mystufvariabletouseonmyscript Set org.kde.kdialog.ProgressDialog value $value
+		a=$(($a+1))
+		done< "$listoffile"
 
 
-
-function_ffmpeg_normal_double(){
-while read line ; do 
-
-
-ffmpeg -i  "$line"  -r ${user_data[9]} -threads  ${user_data[8]}  -vcodec ${user_data[1]}   -b ${user_data[2]} -acodec ${user_data[3]}  -ab ${user_data[4]} -ar ${user_data[7]} -y  -pass1 "${line%%.*}.${user_data[6]}"
-
-ffmpeg -i  "$line"  -r ${user_data[9]} -threads  ${user_data[8]}  -vcodec ${user_data[1]}   -b ${user_data[2]} -acodec ${user_data[3]}  -ab ${user_data[4]} -ar ${user_data[7]}   -pass2 "${line%%.*}.${user_data[6]}"
-
-
-done < $listoffile 
-}
-
-
-
-
-
-function_vlc(){
-
-user_data[1]=$1 #vcodec
-user_data[2]=$2 #vbit
-user_data[3]=$3 #acodec
-user_data[4]=$4 #abit
-user_data[5]=$5 #channels
-user_data[6]=$6 #container
-user_data[7]=$7 #samplerate
-user_data[8]=$8 #threads
-user_data[9]=$9 #framerate
-
-
-
-
-
-kdialog --menu choose  reset =VIDEO=  webm webm ogv ogv  mkv mkv flv  flv avi avi mp4 mp4 mov  mov mpeg1  mpeg1video mepg2 mpeg2video wmv wmv  asf asf 3gp 3gp reset " " reset =AUDIO=  oga  oga mp3 mp3 ac3 ac3 flac flac wav wav wmav2 wmav2 wmav1 wmav1
-
-format=$(kdialog --combobox Format  mp3 mp2 aac ape mp4 mov avi mpg mpeg webm wmv theora flv asf )
-vcodec=$(kdialog --combobox VideoCodec mp1v mp2v mp4v SVQ1 SVQ3 DVDv WMV1 WMV2 WMV3 DVSD MJPG H263 h264 theo IV20 IV40 RV10 cvid VP31 FLV1 CYUV HFYU MSVC MRLE AASC FLIC QPEG VP8)
-
-while read line ; do 
-vlc -I dummy "$1" :sout='#transcode{vcodec="$vcodec",vb="$vbit",acodec="$acodec",ab="$abit",scale=1,channels=$channels,samplerate=$samplerate,deinterlace,audio-sync,threads=$threads}:std{access=file, mux=ps,dst="${line%%.*}.$pcontainervideo"}' vlc://quit
-
-done < $listoffile 
-
+done
 
 
  
 }
 
 
-function_progress_bar(){
+
+function_ffmpeg_normal_double(){
+
 a=1
-mystufvariabletouseonmyscript=$(kdialog --progressbar $"Starting Conversion...wait" 100)
+mystufvariabletouseonmyscript=$(kdialog --progressbar $"Starting Conversion..." 100)
 qdbus $mystufvariabletouseonmyscript  showCancelButton true 
 
 until test "true" = `qdbus  $mystufvariabletouseonmyscript wasCancelled` ; do 
-while read line ; do
-qdbus $mystufvariabletouseonmyscript org.kde.kdialog.ProgressDialog.setLabelText $"Starting Conversion...processing file $line" 
+	while read line ; do
+		qdbus $mystufvariabletouseonmyscript org.kde.kdialog.ProgressDialog.setLabelText $"Starting Conversion...processing file $line" 
+
+ 
+		ffmpeg -i  "$line"  -r ${user_data[9]} -threads  ${user_data[8]}  -vcodec ${user_data[1]}   -b ${user_data[2]} -acodec ${user_data[3]}  -ab ${user_data[4]} -ar ${user_data[7]} -y  -pass1 "${line%%.*}.${user_data[6]}"
+
+		ffmpeg -i  "$line"  -r ${user_data[9]} -threads  ${user_data[8]}  -vcodec ${user_data[1]}   -b ${user_data[2]} -acodec ${user_data[3]}  -ab ${user_data[4]} -ar ${user_data[7]}   -pass2 "${line%%.*}.${user_data[6]}"
+
+
+
+		value=$(( $($a*100))/$numberoffile ))
+		qdbus  $mystufvariabletouseonmyscript Set org.kde.kdialog.ProgressDialog value $value
+		a=$(($a+1))
+done< "$listoffile"
+
+
+done
+
+
+}
+
+
+
+
+function_progress_bar(){
+a=1
+mystufvariabletouseonmyscript=$(kdialog --progressbar $"Starting Conversion..." 100)
+qdbus $mystufvariabletouseonmyscript  showCancelButton true 
+
+until test "true" = `qdbus  $mystufvariabletouseonmyscript wasCancelled` ; do 
+	while read line ; do
+		qdbus $mystufvariabletouseonmyscript org.kde.kdialog.ProgressDialog.setLabelText $"Starting Conversion...processing file $line" 
 
  conversion
 
 
-value=$(( $($a*100))/$numberoffile ))
-qdbus  $mystufvariabletouseonmyscript Set org.kde.kdialog.ProgressDialog value $value
-a=$(($a+1))
-done< "$listoffile"
+		value=$(( $($a*100))/$numberoffile ))
+		qdbus  $mystufvariabletouseonmyscript Set org.kde.kdialog.ProgressDialog value $value
+		a=$(($a+1))
+	done< "$listoffile"
 
 
 done
