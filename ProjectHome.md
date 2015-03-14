@@ -1,0 +1,1 @@
+ffmpeg service menu qt is a service menu for dolphin , the file manager of kde4 series.
